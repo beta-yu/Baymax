@@ -14,11 +14,14 @@
 
 #define RF_PATH "./temp_file/asr.wav"
 #define CMD_ETC "./command.etc"
+#define KEY_ETC "./key.etc"
 
 using std::cout;
 using std::cerr;
 using std::endl;
 using std::string;
+
+std::unordered_map<string, string> key_val;
 
 class Util
 {
@@ -41,7 +44,33 @@ public:
         pclose(fp);
         return true;
     }
+
+    static void Load(string path, std::unordered_map<string, string>& map)
+    {
+        char buf[256];
+        std::ifstream in(path.c_str());
+        if(!in.is_open())
+        {
+            cerr << "Open file failed." << endl;
+            exit(1);
+        }
+        string seq = ":";
+        while(in.getline(buf, sizeof(buf)))
+        {
+            string str = buf;
+            size_t index = str.find(seq);
+            if(index == string::npos)
+            {
+                cerr << "Seq not found." << endl;
+                continue;
+            }
+            string msg = str.substr(0, index);
+            string cmd = str.substr(index+seq.size());
+            map[msg] = cmd;
+        }
+    }
 };
+
 
 class Robot
 {
@@ -126,10 +155,11 @@ private:
         return response;
     }
 public:
-    Robot(string id = "1")
+    Robot() = default;
+    void Init(string id = "1")
     {
         this->Url = "http://openapi.tuling123.com/openapi/api/v2";
-        this->Api_Key = "17d188a929314b4d8260b95f6483a470";
+        this->Api_Key = key_val["Tul_Api_Key"];
         this->User_Id = id;
         this->Client = new aip::HttpClient;
     }
@@ -159,11 +189,12 @@ private:
 private:
 
 public:
-    Speech()
+    Speech() = default;
+    void Init()
     {
-        app_id = "16868215";
-        api_key = "iQhpQBWnBGgcMG7ezGmu5i0X";
-        secret_key = "clqrwMElj8DrCk6c3sAtSoNWg8bw66tL";
+        app_id = key_val["Baidu_App_Id"];
+        api_key = key_val["Baidu_Api_Key"];
+        secret_key = key_val["Baidu_Secret_Key"];
         client = new aip::Speech(app_id, api_key, secret_key);
     }
 
@@ -177,7 +208,6 @@ public:
         string file_content;
         aip::get_file_content(RF_PATH, &file_content);
         Json::Value results = client->recognize(file_content, "wav", 16000, options);
-        //cout << "Recognize result: " << endl << results.toStyledString();
         if(results["err_no"].asInt() != 0)
         {
             cerr << "识别失败：" << results["err_no"].asInt() << " " << results["err_msg"].asString() << endl;
@@ -198,7 +228,10 @@ private:
 public:
     Ivmt()
     {
-        Load_cmd_etc();
+        Util::Load(CMD_ETC, msg_cmd);
+        Util::Load(KEY_ETC, key_val);
+        sh.Init();
+        tl.Init();
     }
     
     bool Record()
@@ -212,31 +245,7 @@ public:
         }
         return true;
     }
-    void Load_cmd_etc()
-    {
-        char buf[256];
-        std::ifstream in(CMD_ETC);
-        if(!in.is_open())
-        {
-            cerr << "Open file failed." << endl;
-            exit(1);
-        }
-        string seq = ":";
-        while(in.getline(buf, sizeof(buf)))
-        {
-            string str = buf;
-            size_t index = str.find(seq);
-            if(index == string::npos)
-            {
-                cerr << "Seq not found." << endl;
-                continue;
-            }
-            string msg = str.substr(0, index);
-            string cmd = str.substr(index+seq.size());
-            msg_cmd[msg] = cmd;
-        }
-        in.close();
-    }
+
     bool Is_cmd(const string& recog_msg, string& cmd)
     {
         auto it = msg_cmd.find(recog_msg);
@@ -248,6 +257,7 @@ public:
             return true;
         }
     }
+
     int Run()
     {
         cout << "录音中..." << endl;
@@ -257,8 +267,6 @@ public:
         string recog_msg;
         if(!sh.ASR(recog_msg))
             return 2;
-        // recog_msg.pop_back();
-        // recog_msg.pop_back();
         string cmd;
         if(Is_cmd(recog_msg, cmd)) //是命令
         {
