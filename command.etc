@@ -1,0 +1,4 @@
+关闭防火墙。:systemctl stop firewalld
+打开防火墙:systemctl start firewalld
+查看当前目录:ls -l
+重启网络服务:systemctl restart network
