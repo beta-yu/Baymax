@@ -1,7 +1,7 @@
 INCLUDE=-I./aip-cpp-sdk
 LIB=-ljsoncpp -lcurl -lcrypto -lpthread
-Ivmt:Ivmt.cc
-	g++ -o $@ $^ $(LIB) -std=c++11 $(INCLUDE)
+Baymax:Baymax.cc
+	g++ -o $@ $^ $(LIB) -std=c++11 $(INCLUDE) -D _LOG_
 .PHONY:clean
 clean:
-	rm -f Ivmt
+	rm -f Baymax
