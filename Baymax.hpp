@@ -17,7 +17,7 @@
 #define ASR_PATH "./temp_file/asr.wav"
 #define CMD_ETC "./command.etc"
 #define KEY_ETC "./key.etc"
-#define TTS_PATH "./temp_file/tts.mp3"
+#define TTS_PATH "./temp_file/tts.wav"
 
 using std::cout;
 using std::cerr;
@@ -40,7 +40,7 @@ public:
             return false;
         }
         char c;
-        while(fread(&c, 1, 1, fp) > 0) ////is_print为true时，打印输出信息
+        while(fread(&c, 1, 1, fp) > 0) //is_print为true时，打印输出信息
         {
             cout << c;
         }
@@ -250,7 +250,8 @@ public:
         std::ofstream ofile;
         string file_ret;
         std::map<string, string> options;
-
+		options["per"] = "111";
+		options["aue"] = "6";
         ofile.open(TTS_PATH, std::ios::out | std::ios::binary);
         Json::Value result = client->text2audio(msg, options, file_ret);
         if(!file_ret.empty()) //合成成功
@@ -286,7 +287,7 @@ private:
 
     bool Play()
     {
-        string cmd = "cvlc VLC_DATA_PATH ";
+        string cmd = "cvlc --play-and-exit "; //Exit after playing.
         cmd += TTS_PATH;
         if(!Util::Exec(cmd, false))
         {
@@ -322,7 +323,6 @@ public:
         Util::PrintProgressBar();
         if(!Record())
             return 1;
-        //cout << "正在识别 ..." << endl;
         string recog_msg;
         if(!sh.ASR(recog_msg))
             return 2;
@@ -341,7 +341,7 @@ public:
             cout << "Baymax: " << msg << endl;
             Play();
             if(recog_msg == "你走吧。")
-                exit(0);
+				exit(0);
         }
         return 0;
     }
