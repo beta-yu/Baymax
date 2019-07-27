@@ -75,7 +75,7 @@ public:
 
     static void *ThreadRun(void *arg)
     {
-        pthread_detach(pthread_self());
+		pthread_detach(pthread_self());
         char bar[53] = {0};
         const char* lable = "|/-\\";
         for(int i = 0; i <= 50; ++i)
@@ -262,6 +262,7 @@ public:
         {
             cerr << __TIME__ << " Text to audio failed: "<< result["err_msg"] << endl;
         }
+		ofile.close();
     }
 };
 
